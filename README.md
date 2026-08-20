@@ -4,6 +4,41 @@ A GitHub Actions workflow that automatically checks whether code changes are ref
 
 ---
 
+## Workflow Diagram
+
+```mermaid
+flowchart TD
+    A([push / pull request / merge]) --> B[actions/checkout\nfetch-depth: 2]
+
+    B --> C[git diff HEAD^ HEAD\n→ diff_output.txt]
+
+    C --> D[coherence_check.sh]
+
+    DOC_SOURCE --> D
+
+    subgraph DOC_SOURCE [DOC_SOURCE — flexible sources]
+        S1[GitHub Raw URL]
+        S2[Hosted Docs Site]
+        S3[Confluence / Notion API]
+        S4[Any public URL]
+    end
+
+    D --> E[curl fetches doc\n→ doc.txt]
+    D --> F[grep added lines\n→ new_changes.txt]
+
+    E --> G{grep -qf\nnew_changes.txt\ndoc.txt}
+    F --> G
+
+    G -- match found --> H([CI PASSES\nCOVERED])
+    G -- no match --> I([CI FAILS\nNOT DOCUMENTED])
+
+    style H fill:#2d6a4f,color:#fff
+    style I fill:#9b2226,color:#fff
+    style DOC_SOURCE fill:#f8f9fa,stroke:#adb5bd
+```
+
+---
+
 ## How It Works
 
 1. **Capture the diff** — on every push or pull request, the workflow runs `git diff HEAD^ HEAD` and saves the output to a file
