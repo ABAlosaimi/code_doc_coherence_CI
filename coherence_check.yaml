@@ -1,4 +1,5 @@
-name: Diff Check
+name: code_doc_coherence_check
+
 on: [push, merge, pull request]
 
 jobs:
@@ -9,10 +10,11 @@ jobs:
         with:
           fetch-depth: 2   # current commit + the one before it
 
-      - name: Show diff vs previous commit
-        run: |
-          git diff HEAD^ HEAD
-      
-      - name: Get the documentation from the source
-        run: |
-          ${{ vars.DOC_SOURCE }}
+      - name: Save git diff to file
+        run: git diff HEAD^ HEAD > diff_output.txt
+
+      - name: Make script executable
+        run: chmod +x coherence_check.sh
+
+      - name: Run coherence check
+        run: ./coherence_check.sh ${{ vars.DOC_SOURCE }} diff_output.txt
