@@ -17,4 +17,6 @@ jobs:
         run: chmod +x coherence_check.sh
 
       - name: Run coherence check
-        run: ./coherence_check.sh ${{ vars.DOC_SOURCE }} diff_output.txt
+        env:
+          AI_API_REQ: ${{ vars.AI_API_REQ }}
+        run: ./coherence_check.sh ${{ vars.COHERENCE_OPTIONS }} ${{ vars.DOC_SOURCE }} diff_output.txt

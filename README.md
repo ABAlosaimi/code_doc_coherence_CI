@@ -14,7 +14,16 @@ flowchart TD
 
     C --> D[coherence_check.sh]
 
-    DOC_SOURCE --> D
+    OPT[COHERENCE_OPTIONS] --> D
+
+    D --> M{-AI option\npresent?}
+
+    M -- yes --> AI[eval AI_API_REQ\ncurl to AI API]
+    AI --> AI_OUT([exit with\nAI API result])
+
+    M -- no --> E[curl fetches doc\n→ doc.txt]
+
+    DOC_SOURCE --> E
 
     subgraph DOC_SOURCE [DOC_SOURCE — flexible sources]
         S1[GitHub Raw URL]
@@ -23,17 +32,17 @@ flowchart TD
         S4[Any public URL]
     end
 
-    D --> E[curl fetches doc\n→ doc.txt]
-    D --> F[grep added lines\n→ new_changes.txt]
+    E --> F[grep added lines\n→ new_changes.txt]
+    C --> F
 
-    E --> G{grep -qf\nnew_changes.txt\ndoc.txt}
-    F --> G
+    F --> G{grep -qf\nnew_changes.txt\ndoc.txt}
 
     G -- match found --> H([CI PASSES\nCOVERED])
     G -- no match --> I([CI FAILS\nNOT DOCUMENTED])
 
     style H fill:#2d6a4f,color:#fff
     style I fill:#9b2226,color:#fff
+    style AI_OUT fill:#1d3557,color:#fff
     style DOC_SOURCE fill:#f8f9fa,stroke:#adb5bd
 ```
 
@@ -64,10 +73,11 @@ Defines the CI pipeline with three steps:
 - Run the script passing the doc source URL and diff file
 
 ### `coherence_check.sh`
-Accepts two arguments:
+Accepts an optional flag followed by two arguments:
 ```bash
-./coherence_check.sh <DOC_SOURCE_URL> <DIFF_FILE>
+./coherence_check.sh [-AI] <DOC_SOURCE_URL> <DIFF_FILE>
 ```
+- `-AI` — optional flag to enable AI API offloading mode (skips grep flow entirely)
 - `DOC_SOURCE_URL` — URL of the documentation to fetch
 - `DIFF_FILE` — path to the saved git diff output
 
@@ -78,14 +88,37 @@ Accepts two arguments:
 ### 1. Add the workflow to your repository
 Place `coherence_check.yaml` inside `.github/workflows/` in your repository.
 
-### 2. Set the `DOC_SOURCE` variable
+### 2. Set the required variables
 In your GitHub repository go to:
 > Settings → Secrets and variables → Actions → Variables
 
-Add a variable named `DOC_SOURCE` with the URL of your documentation source (e.g., a hosted markdown file, a docs site, or a raw GitHub URL).
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DOC_SOURCE` | Yes | URL of your documentation source |
+| `COHERENCE_OPTIONS` | No | Pass `-AI` to enable AI offloading mode, leave empty for default grep mode |
+| `AI_API_REQ` | Only with `-AI` | The curl command to execute against your AI API. Use a **secret** if it contains tokens |
 
 ### 3. Add the script
 Place `coherence_check.sh` in the root of your repository.
+
+---
+
+## Options
+
+### Default mode
+Runs the grep-based comparison between the diff and the documentation:
+```bash
+# COHERENCE_OPTIONS is empty
+./coherence_check.sh $DOC_SOURCE diff_output.txt
+```
+
+### `-AI` mode
+Skips the diff and doc fetching entirely. Executes the `AI_API_REQ` env var directly on the runner — useful for offloading the coherence check to an AI API:
+```bash
+# COHERENCE_OPTIONS = -AI
+./coherence_check.sh -AI
+```
+The CI result depends entirely on the exit code returned by the AI API curl command.
 
 ---
 
@@ -123,16 +156,22 @@ Place `coherence_check.sh` in the root of your repository.
 
 ---
 
-## CI Output Examples:
+## CI Output Examples
 
-**When covered:**
+**When covered (default mode):**
 ```
 === Checking changes against doc ===
 COVERED
 ```
 
-**When not documented:**
+**When not documented (default mode):**
 ```
 === Checking changes against doc ===
 NOT DOCUMENTED: check out your code-documentation coherence in your new added changes
+```
+
+**When using `-AI` mode:**
+```
+=== AI API offloading mode ===
+[output from your AI API curl command]
 ```
