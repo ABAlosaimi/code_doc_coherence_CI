@@ -48,5 +48,6 @@ jobs:
           CI_EVENT_NAME:  ${{ github.event_name }}
           CI_PR_NUMBER:   ${{ github.event.pull_request.number }}
           CI_ACTOR:       ${{ github.actor }}
+          DOC_SOURCE_URL: ${{ vars.DOC_SOURCE_URL }}
 
         run: ./coherence_check.sh
