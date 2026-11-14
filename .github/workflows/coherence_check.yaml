@@ -1,0 +1,52 @@
+name: code_doc_coherence_check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # current commit + the one before it
+
+      - name: Save git diff to a file
+        run: git diff HEAD^ HEAD > diff_output.txt
+
+      - name: Set up Python
+        if: vars.DATA_PIPELINE_ENABLED == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Snowflake dependencies
+        if: vars.DATA_PIPELINE_ENABLED == 'true'
+        run: pip install snowflake-connector-python cryptography
+
+      - name: Make script executable
+        run: chmod +x coherence_check.sh
+
+      - name: Run coherence check
+        env:
+          # --- pipeline flag (read by bash) ---
+          DATA_PIPELINE_ENABLED: ${{ vars.DATA_PIPELINE_ENABLED }}
+
+          # --- Snowflake connection (read by Python) ---
+          SNOWFLAKE_ACCOUNT:     ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:        ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+          SNOWFLAKE_WAREHOUSE:   ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE:    ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA:      ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE:        ${{ secrets.SNOWFLAKE_ROLE }}
+
+          # --- CI_RUNS table columns (read by Python) ---
+          CI_REPO:        ${{ github.repository }}
+          CI_BRANCH_NAME: ${{ github.ref_name }}
+          CI_EVENT_NAME:  ${{ github.event_name }}
+          CI_PR_NUMBER:   ${{ github.event.pull_request.number }}
+          CI_ACTOR:       ${{ github.actor }}
+
+        run: ./coherence_check.sh ${{ vars.DOC_SOURCE }} diff_output.txt
