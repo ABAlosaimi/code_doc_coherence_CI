@@ -49,4 +49,4 @@ jobs:
           CI_PR_NUMBER:   ${{ github.event.pull_request.number }}
           CI_ACTOR:       ${{ github.actor }}
 
-        run: ./coherence_check.sh ${{ vars.DOC_SOURCE }} diff_output.txt
+        run: ./coherence_check.sh
