@@ -13,7 +13,7 @@ fi
 less doc.txt
 
 # Extract new lines added in the diff
-grep '^\+' "$DIFF_FILE" | sed 's/^\+//' > new_changes.txt
+echo $DIFF_FILE | grep '^\+' | sed 's/^\+//' > new_changes.txt
 
 less new_changes.txt
 

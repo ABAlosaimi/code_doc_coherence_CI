@@ -27,7 +27,7 @@ pr_number = int(pr_raw) if pr_raw.isdigit() else None
 
 conn.cursor().execute(
     "INSERT INTO CI_RUNS (REPO, BRANCH_NAME, EVENT_NAME, PR_NUMBER, STATUS, ACTOR, ENV_VARS) "
-    "SELECT %s, %s, %s, %s, %s, %s, ARRAY_CONSTRUCT()",
+    "SELECT %s, %s, %s, %s, %s, %s, ARRAY_CONSTRUCT()::ARRAY(VARCHAR(16777216))",
     (os.environ["CI_REPO"],
      os.environ["CI_BRANCH_NAME"],
      os.environ["CI_EVENT_NAME"],
