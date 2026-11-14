@@ -3,7 +3,9 @@ import snowflake.connector
 from cryptography.hazmat.primitives import serialization
 
 key = serialization.load_pem_private_key(
-    os.environ["SNOWFLAKE_PRIVATE_KEY"].encode(), password=None)
+    os.environ["SNOWFLAKE_PRIVATE_KEY"].replace("\\n", "\n").encode(),
+    password=None)
+
 key_bytes = key.private_bytes(
     serialization.Encoding.DER,
     serialization.PrivateFormat.PKCS8,
